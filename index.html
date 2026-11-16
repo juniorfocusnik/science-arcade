@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Science Arcade</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Arcade cabinet: marquee with live waves, coin-slot topic picker, cartridge game grid, side console for checklist + glossary */
+  --bg:#12132b;
+  --panel:#1b1d3e;
+  --line:#363a72;
+  --text:#f3eee3;
+  --muted:#a9a8cb;
+  --coin:#ffb238;
+  --good:#56e0b4;
+  --bad:#ff6b7f;
+  --t-hum:#ff8fc7;
+  --t-pla:#9be56f;
+  --t-snd:#62c9ff;
+  --t-lgt:#ffd94f;
+  --display:'Silkscreen','Courier New',monospace;
+  --body:'Atkinson Hyperlegible',system-ui,-apple-system,'Segoe UI',sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:17px;line-height:1.5;min-height:100%}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(to bottom,rgba(255,255,255,.025) 0 1px,transparent 1px 3px);z-index:50}
+a{color:var(--coin)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--coin);outline-offset:3px}
+.wrap{max-width:1100px;margin:0 auto;padding:0 20px}
+h1,h2,h3,.px{font-family:var(--display);font-weight:400;letter-spacing:.02em;text-wrap:balance}
+
+/* marquee */
+.marquee{position:relative;border-bottom:3px solid var(--line);background:linear-gradient(180deg,#191a3a,var(--bg));overflow:hidden}
+#waves{position:absolute;inset:0;width:100%;height:100%;opacity:.9}
+.marquee .wrap{position:relative;display:flex;flex-wrap:wrap;gap:16px 24px;align-items:flex-end;justify-content:space-between;padding-top:34px;padding-bottom:30px}
+.title h1{margin:0;font-size:clamp(2.1rem,7vw,4.2rem);line-height:1;color:var(--coin);text-shadow:4px 4px 0 #7a3d10,0 0 24px rgba(255,178,56,.35)}
+.title p{margin:10px 0 0;color:var(--muted);font-size:1rem}
+.wave-labels{display:flex;gap:18px;margin-top:10px;font-family:var(--display);font-size:.7rem;color:var(--muted)}
+.wave-labels span::before{content:"";display:inline-block;width:10px;height:10px;margin-right:6px;vertical-align:-1px}
+.wave-labels .l::before{background:var(--t-lgt)}
+.wave-labels .s::before{background:var(--t-snd)}
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.pill{font-family:var(--display);font-size:.8rem;padding:8px 12px;border:2px solid var(--coin);color:var(--coin);background:rgba(18,19,43,.85)}
+.btn{cursor:pointer;border:2px solid var(--line);background:var(--panel);padding:10px 16px;font-weight:700;border-radius:4px;box-shadow:0 4px 0 #0a0b1c;transition:transform .08s,box-shadow .08s,border-color .15s}
+.btn:hover{border-color:var(--coin)}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #0a0b1c}
+.btn.primary{background:var(--coin);color:#2a1600;border-color:var(--coin)}
+.btn.ghost{background:transparent;box-shadow:none}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+
+/* menu */
+main{padding:28px 0 60px}
+.step{font-family:var(--display);font-size:1.05rem;margin:0 0 14px;color:var(--text)}
+.step b{color:var(--coin);font-weight:400}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:34px}
+.chip{cursor:pointer;display:flex;align-items:center;gap:10px;padding:10px 14px;border:2px solid var(--line);background:var(--panel);border-radius:4px;font-weight:700}
+.chip i{width:14px;height:14px;display:inline-block;background:var(--c)}
+.chip small{color:var(--muted);font-weight:400}
+.chip[aria-pressed="true"]{border-color:var(--c);box-shadow:inset 0 0 0 2px var(--c);background:color-mix(in srgb,var(--c) 14%,var(--panel))}
+.games{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:40px}
+.cart{cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:8px;padding:16px;border:2px solid var(--line);background:var(--panel);border-radius:6px;box-shadow:0 6px 0 #0a0b1c;transition:transform .1s,border-color .15s}
+.cart:hover:not([disabled]){transform:translateY(-3px);border-color:var(--coin)}
+.cart[disabled]{opacity:.45;cursor:not-allowed}
+.cart .glyph{font-family:var(--display);font-size:1.7rem;color:var(--coin);line-height:1}
+.cart h3{margin:4px 0 0;font-size:1rem}
+.cart p{margin:0;color:var(--muted);font-size:.92rem;flex:1}
+.cart .best{font-family:var(--display);font-size:.72rem;color:var(--good)}
+.console{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media (max-width:820px){.console{grid-template-columns:1fr}}
+.box{border:2px solid var(--line);background:var(--panel);border-radius:6px;padding:18px}
+.box h2{margin:0 0 4px;font-size:1rem}
+.box .sub{margin:0 0 14px;color:var(--muted);font-size:.92rem}
+.group{margin-bottom:16px}
+.group-head{display:flex;justify-content:space-between;gap:10px;align-items:baseline;margin-bottom:6px}
+.group-head h3{margin:0;font-size:.82rem;color:var(--gc)}
+.group-head span{font-family:var(--display);font-size:.72rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.bar{height:8px;background:#0e0f24;border:1px solid var(--line);margin-bottom:8px}
+.bar div{height:100%;background:var(--gc);transition:width .3s}
+.check{display:flex;gap:10px;align-items:flex-start;padding:5px 0;font-size:.93rem;cursor:pointer}
+.check input{width:18px;height:18px;margin-top:2px;accent-color:var(--coin);flex:none}
+.check input:checked + span{color:var(--muted);text-decoration:line-through}
+.search{width:100%;padding:10px 12px;border:2px solid var(--line);background:#0e0f24;color:var(--text);border-radius:4px;font:inherit;margin-bottom:12px}
+.gloss{max-height:520px;overflow:auto;margin:0;padding-right:6px}
+.gloss div{padding:8px 0;border-bottom:1px solid var(--line)}
+.gloss dt{font-weight:700;display:flex;gap:8px;align-items:center}
+.gloss dt i{width:8px;height:8px;background:var(--c);flex:none}
+.gloss dd{margin:2px 0 0 16px;color:var(--muted);font-size:.93rem}
+footer{color:var(--muted);font-size:.85rem;padding:0 0 30px}
+
+/* stage */
+.stage-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.hud{display:flex;gap:10px;flex-wrap:wrap}
+.hud div{font-family:var(--display);font-size:.78rem;padding:7px 10px;border:2px solid var(--line);background:var(--panel);font-variant-numeric:tabular-nums}
+.hud b{color:var(--coin);font-weight:400;margin-left:6px}
+.screen{max-width:760px;margin:0 auto}
+.tag{display:inline-block;font-family:var(--display);font-size:.7rem;padding:3px 8px;border:2px solid var(--c);color:var(--c);margin-bottom:10px}
+.qtext{font-size:clamp(1.25rem,3.4vw,1.6rem);font-weight:700;line-height:1.3;margin:0 0 18px;text-wrap:balance}
+.timer{height:10px;border:2px solid var(--line);background:#0e0f24;margin-bottom:18px}
+.timer div{height:100%;background:var(--coin);width:100%}
+.opts{display:grid;gap:10px}
+.opt{cursor:pointer;text-align:left;display:flex;gap:12px;align-items:center;padding:14px 16px;border:2px solid var(--line);background:var(--panel);border-radius:6px;font-size:1.02rem;box-shadow:0 4px 0 #0a0b1c}
+.opt:hover:not([disabled]){border-color:var(--coin)}
+.opt kbd{font-family:var(--display);font-size:.75rem;padding:2px 7px;border:2px solid var(--line);color:var(--muted);flex:none}
+.opt.ok{border-color:var(--good);background:color-mix(in srgb,var(--good) 18%,var(--panel))}
+.opt.no{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 18%,var(--panel))}
+.opt[disabled]{cursor:default}
+.feedback{margin-top:18px;padding:14px 16px;border-left:6px solid var(--fc);background:var(--panel);border-radius:4px}
+.feedback strong{font-family:var(--display);font-weight:400;color:var(--fc);display:block;margin-bottom:4px}
+.feedback p{margin:0 0 12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.blanks{font-family:var(--display);font-size:clamp(1.1rem,4vw,1.6rem);letter-spacing:.18em;margin:6px 0 16px;color:var(--coin);word-break:break-word}
+.answer{flex:1;min-width:180px;padding:12px 14px;border:2px solid var(--line);background:#0e0f24;color:var(--text);border-radius:4px;font:inherit;font-size:1.15rem}
+.answer:focus{border-color:var(--coin);outline:none}
+.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.match{display:grid;grid-template-columns:1fr 1.6fr;gap:12px}
+@media (max-width:560px){.match{grid-template-columns:1fr}}
+.match .col{display:grid;gap:8px;align-content:start}
+.mbtn{cursor:pointer;text-align:left;padding:12px 14px;border:2px solid var(--line);background:var(--panel);border-radius:6px;font-size:.95rem}
+.mbtn.term{font-weight:700}
+.mbtn.sel{border-color:var(--coin);box-shadow:inset 0 0 0 2px var(--coin)}
+.mbtn.done{border-color:var(--good);color:var(--muted);background:color-mix(in srgb,var(--good) 10%,var(--panel));cursor:default}
+.mbtn.wrong{border-color:var(--bad);animation:shake .35s}
+.card-wrap{perspective:1200px;margin-bottom:18px}
+.card{position:relative;width:100%;min-height:260px;cursor:pointer;border:none;background:none;padding:0;transform-style:preserve-3d;transition:transform .45s}
+.card.flipped{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:26px;border:3px solid var(--line);border-radius:10px;background:var(--panel);backface-visibility:hidden;text-align:center;box-shadow:0 8px 0 #0a0b1c}
+.face.back{transform:rotateY(180deg);border-color:var(--coin)}
+.face .big{font-family:var(--display);font-size:clamp(1.5rem,5vw,2.3rem);color:var(--coin);line-height:1.15}
+.face .def{font-size:1.2rem;max-width:34ch}
+.face small{color:var(--muted);font-size:.85rem}
+.end h2{font-size:clamp(1.5rem,5vw,2.2rem);color:var(--coin);margin:0 0 6px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:18px 0}
+.stats div{border:2px solid var(--line);background:var(--panel);padding:12px;border-radius:6px}
+.stats span{display:block;color:var(--muted);font-size:.85rem}
+.stats b{font-family:var(--display);font-weight:400;font-size:1.4rem;font-variant-numeric:tabular-nums}
+.pb{font-family:var(--display);color:var(--good);margin:6px 0 0}
+.review{margin:20px 0}
+.review h3{font-size:.9rem;margin:0 0 8px}
+.review li{margin-bottom:8px}
+.review li span{color:var(--good);font-weight:700}
+.hint{color:var(--muted);font-size:.92rem;margin-top:10px}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important;animation:none!important}
+}
+</style>
+</head>
+<body>
+<header class="marquee">
+  <canvas id="waves" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <div class="title">
+      <h1>Science<br>Arcade</h1>
+      <p>Year 8 practice: reproduction &amp; health, sound and light</p>
+      <div class="wave-labels"><span class="l">Light: transverse</span><span class="s">Sound: longitudinal</span></div>
+    </div>
+    <div class="controls">
+      <span class="pill" id="countdown"></span>
+      <button class="btn" id="soundBtn" aria-pressed="true">Sound on</button>
+    </div>
+  </div>
+</header>
+
+<main id="menu" class="wrap">
+  <h2 class="step"><b>1</b> Pick a topic</h2>
+  <div class="chips" id="chips"></div>
+  <h2 class="step"><b>2</b> Pick a game</h2>
+  <div class="games" id="games"></div>
+  <div class="console">
+    <section class="box">
+      <h2>Revision checklist</h2>
+      <p class="sub">Tick off each objective from your revision list once you can explain it without notes.</p>
+      <div id="checklist"></div>
+    </section>
+    <section class="box">
+      <h2>Glossary</h2>
+      <p class="sub">Every keyword from your revision list. Shows the topic you picked above.</p>
+      <label for="gsearch" class="sub" style="display:block;margin:0 0 6px">Search keywords</label>
+      <input id="gsearch" class="search" type="search" placeholder="e.g. placenta, pitch, normal">
+      <dl class="gloss" id="gloss"></dl>
+    </section>
+  </div>
+</main>
+
+<main id="stage" class="wrap" hidden>
+  <div class="stage-top">
+    <button class="btn ghost" id="backBtn">← Back to games</button>
+    <div class="hud" id="hud"></div>
+  </div>
+  <div class="screen" id="screen"></div>
+</main>
+
+<footer class="wrap">Your ticks and personal bests are saved in this browser only. Revise with BBC Bitesize too: <a href="https://www.bbc.co.uk/bitesize/topics/zybbkqt">Reproduction</a> · <a href="https://www.bbc.co.uk/bitesize/topics/zw982hv">Sound &amp; light</a></footer>
+
+<script>
+/* ---------- data ---------- */
+const TOPICS = {
+  all:{name:"Everything", c:"--coin"},
+  hum:{name:"Human reproduction", c:"--t-hum"},
+  pla:{name:"Plant reproduction", c:"--t-pla"},
+  snd:{name:"Sound", c:"--t-snd"},
+  lgt:{name:"Light", c:"--t-lgt"}
+};
+
+const G = [
+["hum","penis","Male organ that carries sperm (and urine) out of the body."],
+["hum","testes","Male organs that make sperm and the hormone testosterone."],
+["hum","sperm duct","Tube that carries sperm from the testes towards the penis."],
+["hum","vagina","Muscular tube that leads from the cervix to the outside of the body."],
+["hum","cervix","Ring of muscle at the entrance to the uterus."],
+["hum","uterus","Muscular organ where a baby develops. Also called the womb."],
+["hum","oviduct","Tube that carries an egg from the ovary to the uterus. Fertilisation happens here."],
+["hum","ovary","Female organ that releases an egg about once a month."],
+["hum","egg","Female gamete. It has a large cytoplasm with a food store."],
+["hum","sperm","Male gamete. It has a tail to swim and lots of mitochondria for energy."],
+["hum","gametes","Sex cells. Each one has half the normal genetic information."],
+["hum","fertilisation","When the nucleus of a sperm fuses with the nucleus of an egg."],
+["hum","zygote","The single cell made when a sperm and an egg fuse."],
+["hum","nucleus","Part of a cell that holds the genetic information."],
+["hum","cell division","When one cell splits into two. It turns a zygote into an embryo."],
+["hum","hormones","Chemical messengers carried in the blood. They control puberty and the menstrual cycle."],
+["hum","puberty","Time when the body changes into an adult body that can reproduce."],
+["hum","menstruation","When the uterus lining breaks down and leaves the body. Also called a period."],
+["hum","ovulation","Release of an egg from an ovary, around day 14 of the cycle."],
+["hum","uterus lining","Thick, blood-rich layer inside the womb where an embryo can implant."],
+["hum","implantation","When an embryo attaches itself to the uterus lining."],
+["hum","placenta","Organ that passes oxygen and nutrients from the mother's blood to the foetus and takes waste away."],
+["hum","umbilical cord","Connects the foetus to the placenta."],
+["hum","foetus","A developing baby from about 9 weeks until birth."],
+["hum","embryo","Ball of cells that grows from a zygote in the first weeks of pregnancy."],
+["hum","tampon","Product placed in the vagina to absorb blood during a period."],
+["hum","nutrients","Useful substances from food that the foetus needs to grow."],
+["pla","anther","Part of the stamen that makes pollen."],
+["pla","filament","Stalk that holds up the anther."],
+["pla","stamen","Male part of a flower, made of the anther and filament."],
+["pla","stigma","Sticky top of the carpel that catches pollen."],
+["pla","style","Stalk that connects the stigma to the ovary."],
+["pla","carpel","Female part of a flower, made of the stigma, style and ovary."],
+["pla","ovary","Part of the carpel that holds the ovules. It becomes the fruit."],
+["pla","ovule","Contains the female sex cell of a plant. It becomes the seed."],
+["pla","pollen","Tiny grains that carry the male sex cell of a plant."],
+["pla","petal","Often brightly coloured part of a flower that attracts insects."],
+["pla","sepal","Leaf-like part that protects the flower while it is a bud."],
+["pla","nectar","Sugary liquid that flowers make to attract insects."],
+["pla","pollination","Transfer of pollen from an anther to a stigma."],
+["pla","cross-pollination","Pollen moves to a flower on a different plant of the same species. Gives more variation."],
+["pla","self-pollination","Pollen moves to a stigma on the same plant. Reliable, but gives little variation."],
+["pla","pollen tube","Grows from a pollen grain down the style to the ovule."],
+["pla","seed","Contains a plant embryo and a food store, inside a tough coat."],
+["pla","embryo","Tiny young plant inside a seed."],
+["pla","fruit","Grows from the ovary after fertilisation. It protects the seeds and helps disperse them."],
+["pla","dispersal","Spreading seeds away from the parent plant."],
+["pla","germination","When a seed starts to grow. It needs water, warmth and oxygen, but not light."],
+["pla","competition","When living things need the same resources, like light, water and space."],
+["pla","hooks","Tiny barbs on some seeds that catch on animal fur, like burdock."],
+["snd","vibration","Quick back-and-forth movement that makes sound."],
+["snd","longitudinal","Type of wave where particles vibrate in the same direction the wave travels."],
+["snd","amplitude","Height of a wave from the middle to the top. Bigger means louder."],
+["snd","wavelength","Distance from one point on a wave to the same point on the next wave."],
+["snd","frequency","Number of waves per second, measured in hertz (Hz)."],
+["snd","pitch","How high or low a sound is. It depends on frequency."],
+["snd","volume","How loud a sound is. It depends on amplitude."],
+["snd","medium","A material (solid, liquid or gas) that a wave travels through."],
+["snd","vacuum","Space with no particles at all. Sound cannot travel through it."],
+["snd","particles","Tiny bits that make up all materials. They pass sound vibrations along."],
+["snd","ultrasound","Sound with a frequency above 20,000 Hz, too high for humans to hear."],
+["snd","echo","A sound that has reflected off a surface."],
+["snd","hertz","Unit of frequency (Hz): one wave per second."],
+["snd","speed","How far something travels each second: distance ÷ time."],
+["lgt","transverse","Type of wave where vibrations are at right angles to the direction it travels."],
+["lgt","reflection","When light bounces off a surface."],
+["lgt","refraction","When light changes speed and bends as it goes into a different material."],
+["lgt","normal","Imaginary line at 90° to a surface. Angles are measured from it."],
+["lgt","angle of incidence","Angle between the ray hitting a surface and the normal."],
+["lgt","angle of reflection","Angle between the ray bouncing off a surface and the normal."],
+["lgt","plane mirror","A flat mirror."],
+["lgt","incident ray","Ray of light travelling towards a surface."],
+["lgt","dispersion","Splitting of white light into its colours, for example by a prism."],
+["lgt","prism","Triangular block of glass that can split white light into colours."],
+["lgt","spectrum","Band of colours from red to violet that white light splits into."],
+["lgt","white light","A mixture of all the colours of the rainbow."]
+];
+
+const Q = [
+["hum","Which organ makes sperm?","Testes",["Sperm duct","Oviduct","Cervix"],"The testes make sperm and the hormone testosterone. The sperm duct only carries sperm."],
+["hum","Where does fertilisation normally happen?","Oviduct",["Uterus","Ovary","Vagina"],"Sperm meet the egg in the oviduct. The embryo then moves down to the uterus."],
+["hum","What is fertilisation?","The nucleus of a sperm fusing with the nucleus of an egg",["An egg being released from the ovary","An embryo attaching to the uterus lining","The uterus lining breaking down"],"Fertilisation is the fusion of the two nuclei. It makes a zygote."],
+["hum","What is a zygote?","The cell made when a sperm and egg fuse",["A male gamete","The lining of the uterus","A hormone made in puberty"],"The zygote divides again and again by cell division to form an embryo."],
+["hum","How is a sperm cell adapted to reach the egg?","It has a tail to swim",["It has a large food store","It has a thick jelly coat","It is the largest cell in the body"],"The tail moves the sperm, and lots of mitochondria release the energy it needs."],
+["hum","Why does an egg cell have a large cytoplasm?","It contains a food store for the embryo",["To help it swim","To make hormones","To hold extra nuclei"],"The egg's food store feeds the embryo in its first days."],
+["hum","What do gametes contain compared with normal body cells?","Half the genetic information",["Double the genetic information","The same genetic information","No genetic information"],"When two gametes fuse, the zygote gets a full set: half from each parent."],
+["hum","Around which day of the menstrual cycle does ovulation happen?","Day 14",["Day 1","Day 5","Day 28"],"Ovulation, when an ovary releases an egg, happens around the middle of the 28-day cycle."],
+["hum","What happens during days 1–5 of the menstrual cycle?","The uterus lining breaks down and leaves the body",["An egg is released","The uterus lining thickens","Fertilisation happens"],"This is menstruation, also called a period."],
+["hum","Why does the uterus lining thicken after a period?","So an embryo could implant in it",["To release an egg","To make sperm","To produce hormones"],"A thick, blood-rich lining is ready in case an egg is fertilised."],
+["hum","What controls the changes of puberty?","Hormones",["The placenta","The cervix","The oviduct"],"Hormones like testosterone and oestrogen trigger the changes of puberty."],
+["hum","Which puberty change happens only in boys?","The voice breaks",["Pubic hair grows","A growth spurt","Underarm hair grows"],"Both sexes grow body hair and have a growth spurt. A deeper voice is a boy-only change."],
+["hum","Which puberty change happens only in girls?","Periods start",["Body hair grows","Sex organs develop","A growth spurt"],"Periods start in girls. The other changes happen to both."],
+["hum","What does the placenta do?","Passes oxygen and nutrients to the foetus and removes waste",["Mixes the mother's and foetus's blood","Releases eggs","Makes sperm"],"Substances cross the placenta, but the two bloodstreams don't mix."],
+["hum","What connects the foetus to the placenta?","The umbilical cord",["The oviduct","The cervix","The sperm duct"],"Blood flows along the umbilical cord between the foetus and the placenta."],
+["hum","How can smoking during pregnancy harm the foetus?","Less oxygen reaches it, so the baby may be born small",["It makes the placenta bigger","It speeds up the foetus's growth","It has no effect"],"Chemicals in smoke cross the placenta and reduce the oxygen the foetus gets."],
+["hum","What is implantation?","An embryo attaching to the uterus lining",["Sperm entering the oviduct","An egg leaving the ovary","The baby being born"],"After implantation, the placenta starts to develop."],
+["hum","Roughly how long is a human pregnancy?","About 9 months (40 weeks)",["About 3 months","About 6 months","About 12 months"],"Pregnancy is usually counted as about 40 weeks."],
+["pla","Which part of a flower makes pollen?","Anther",["Stigma","Ovary","Sepal"],"The anther sits on the filament. Together they make the stamen."],
+["pla","Which parts make up the carpel?","Stigma, style and ovary",["Anther and filament","Petal and sepal","Pollen and nectar"],"The carpel is the female part. The stamen (anther + filament) is the male part."],
+["pla","What is pollination?","Transfer of pollen from an anther to a stigma",["A seed starting to grow","Seeds being spread out","The male and female nuclei fusing"],"Pollination comes first. Fertilisation happens later, inside the ovule."],
+["pla","What is the job of the sepals?","Protect the flower while it is a bud",["Make pollen","Attract insects","Catch pollen"],"Sepals are the small leaf-like parts under the petals."],
+["pla","Which feature suggests a flower is wind-pollinated?","Huge amounts of light pollen",["Bright, scented petals","Sticky pollen","Lots of nectar"],"Most wind-blown pollen is lost, so wind-pollinated plants make lots of it."],
+["pla","Which feature suggests a flower is insect-pollinated?","Brightly coloured petals and nectar",["A feathery stigma hanging outside","No petals","Anthers dangling in the wind"],"Colour, scent and nectar attract insects, which carry the sticky pollen."],
+["pla","After pollen lands on the stigma, what happens next?","A pollen tube grows down the style to the ovule",["The seed is dispersed","The petals make nectar","The ovary releases pollen"],"The male nucleus travels down the pollen tube to fuse with the ovule's nucleus."],
+["pla","After fertilisation, what does the ovule become?","The seed",["The fruit","The petal","The anther"],"The ovule becomes the seed and the ovary becomes the fruit."],
+["pla","After fertilisation, what does the ovary become?","The fruit",["The seed","The stigma","The pollen tube"],"The fruit protects the seeds and helps disperse them."],
+["pla","What is the main function of a fruit?","Protect the seeds and help disperse them",["Make pollen","Catch sunlight","Attract pollen"],"Fruits can be eaten, blown, carried on fur or even explode."],
+["pla","Why do plants disperse their seeds?","To reduce competition with the parent plant",["To make more pollen","To help them photosynthesise","To attract insects"],"Seedlings growing far away don't compete with their parent for light, water and nutrients."],
+["pla","How are sycamore seeds dispersed?","By wind, using wing-like parts",["By animals eating them","By water","By exploding pods"],"The wings make the seed spin and drift further from the tree."],
+["pla","How are burdock seeds with tiny hooks dispersed?","They stick to animal fur",["They float on water","Animals eat them","They explode out of a pod"],"The hooks catch on fur and drop off somewhere else later."],
+["pla","How are coconuts dispersed?","They float on water",["Wind blows them","Their pods explode","Hooks catch on fur"],"Coconuts are light and waterproof, so they can drift between islands."],
+["pla","How are seeds in berries dispersed?","Animals eat them and the seeds pass out in droppings",["Their hooks catch on fur","Wind carries them","They float away"],"The seeds survive digestion and land somewhere new with ready-made fertiliser."],
+["pla","Which is NOT needed for germination?","Light",["Water","Warmth","Oxygen"],"A seed uses its own food store to germinate. It only needs light later, when its leaves start photosynthesis."],
+["pla","What is an advantage of cross-pollination?","The offspring show more variation",["It doesn't need insects or wind","It always works","The offspring are identical"],"Mixing genes from two plants gives variation, which helps a species survive change."],
+["pla","What is an advantage of self-pollination?","It doesn't rely on pollen reaching another plant",["It gives lots of variation","It makes bigger flowers","It stops germination"],"Self-pollination is reliable, but the offspring are very similar."],
+["pla","What is the correct order of a flowering plant's life cycle?","Germination → growth → flowering → pollination → fertilisation → dispersal",["Pollination → germination → fertilisation → flowering → dispersal","Flowering → dispersal → pollination → germination → fertilisation","Fertilisation → pollination → flowering → germination → dispersal"],"Pollination always comes before fertilisation, and dispersal comes after the seeds form."],
+["pla","Why does a plant that uses wind dispersal make so many seeds?","Many land in unsuitable places and don't grow",["Wind only carries big seeds","Animals eat them all","Seeds need light to germinate"],"Wind is free but random, so plants make extra seeds to make up for the losses."],
+["snd","What causes sound?","Vibrations",["Light waves","Magnetism","Heat"],"Vibrating objects make the particles around them vibrate too."],
+["snd","What type of wave is sound?","Longitudinal",["Transverse","Electromagnetic","It isn't a wave"],"In a longitudinal wave, particles vibrate back and forth along the direction the wave travels."],
+["snd","A sound gets louder. What changes?","The amplitude gets bigger",["The frequency increases","The wavelength gets shorter","The speed increases"],"Volume depends on amplitude."],
+["snd","A sound gets higher in pitch. What changes?","Frequency increases and wavelength gets shorter",["Amplitude increases","Frequency decreases","Wavelength gets longer"],"Pitch depends on frequency. More waves per second means each wave is shorter."],
+["snd","What unit is frequency measured in?","Hertz (Hz)",["Metres (m)","Seconds (s)","Metres per second (m/s)"],"1 Hz is one wave per second."],
+["snd","In which state does sound travel fastest?","Solids",["Liquids","Gases","A vacuum"],"Particles in a solid are closest together, so vibrations pass along fastest."],
+["snd","Why does sound travel faster in water than in air?","Water particles are closer together",["Water is colder","Water is see-through","Water has no particles"],"Closer particles pass on vibrations more quickly."],
+["snd","Why can't sound travel through space?","There are no particles to pass on vibrations",["It is too cold","Sound is a transverse wave","The Sun blocks it"],"Sound needs a medium. Space is a vacuum."],
+["snd","What is ultrasound?","Sound above 20,000 Hz",["Sound below 20 Hz","Very loud sound","Sound that travels in a vacuum"],"It's too high-pitched for humans to hear."],
+["snd","What is the range of human hearing?","20 Hz to 20,000 Hz",["0 Hz to 100 Hz","200 Hz to 2,000 Hz","20,000 Hz to 50,000 Hz"],"Young people can often hear higher frequencies than older adults."],
+["snd","Which is a use of ultrasound?","Scanning an unborn baby",["Seeing in the dark with light","Heating food","Taking X-ray photos"],"Echoes of ultrasound build up an image. Other uses: sonar, cleaning and breaking kidney stones."],
+["snd","Roughly how fast does sound travel in air?","340 m/s",["3 m/s","1,500 m/s","300,000,000 m/s"],"1,500 m/s is about the speed in water, and 300,000,000 m/s is the speed of light."],
+["snd","Roughly how fast does sound travel in water?","1,500 m/s",["34 m/s","340 m/s","300,000,000 m/s"],"That's over four times faster than in air."],
+["snd","Sound travels 1,700 m in 5 s. What is its speed?","340 m/s",["8,500 m/s","170 m/s","1,700 m/s"],"Speed = distance ÷ time = 1,700 ÷ 5 = 340 m/s."],
+["snd","What does wavelength measure?","Distance from one point on a wave to the same point on the next",["Height of the wave","Number of waves per second","How loud the wave is"],"For example, from one peak to the next peak."],
+["snd","For an echo, why do you halve speed × time to find the distance?","The sound travelled there and back",["Sound slows down","Echoes are half as loud","Time must be in minutes"],"The total path is double the distance to the wall."],
+["lgt","What type of wave is light?","Transverse",["Longitudinal","Sound","Compression"],"In a transverse wave, the vibrations are at 90° to the direction of travel."],
+["lgt","How fast does light travel?","300,000,000 m/s",["340 m/s","1,500 m/s","3,000 m/s"],"Nearly a million times faster than sound in air."],
+["lgt","Why do you see lightning before you hear thunder?","Light travels much faster than sound",["Sound travels faster than light","Thunder happens later","Your eyes work faster than your ears"],"They happen at the same moment, but the light reaches you almost instantly."],
+["lgt","Which can travel through a vacuum?","Light only",["Sound only","Both light and sound","Neither"],"Light doesn't need a medium. Sound does."],
+["lgt","What is the law of reflection?","Angle of incidence = angle of reflection",["Angle of incidence is double the angle of reflection","The two angles add up to 180°","Light always reflects at 90°"],"This works for any flat (plane) mirror."],
+["lgt","Angles of incidence and reflection are measured from…","The normal",["The mirror surface","The floor","The light source"],"The normal is an imaginary line at 90° to the surface."],
+["lgt","A ray hits a mirror at 30° to the mirror surface. What is the angle of incidence?","60°",["30°","90°","120°"],"Measure from the normal: 90 − 30 = 60°."],
+["lgt","What is refraction?","Light changing speed and bending as it enters a new material",["Light bouncing off a mirror","Light splitting into colours","Light being absorbed"],"For example, a straw looks bent in a glass of water."],
+["lgt","Light goes from air into glass. What happens?","It slows down and bends towards the normal",["It speeds up and bends away from the normal","It stops completely","Nothing changes"],"Coming back out of the glass, it speeds up and bends away from the normal."],
+["lgt","What is dispersion?","White light splitting into a spectrum of colours",["Light bouncing off a mirror","Sound spreading out","Light being absorbed by black objects"],"A prism disperses light because each colour refracts by a different amount."],
+["lgt","Which colour of light refracts the most in a prism?","Violet",["Red","Green","Yellow"],"Violet bends most and red bends least, so the colours spread out."],
+["lgt","Which is the correct order of the spectrum?","Red, orange, yellow, green, blue, indigo, violet",["Red, yellow, orange, green, indigo, blue, violet","Violet, red, orange, blue, green, yellow, indigo","Orange, red, yellow, blue, green, violet, indigo"],"Remember: Richard Of York Gave Battle In Vain."],
+["lgt","How are light and sound waves different?","Light is transverse and needs no medium; sound is longitudinal and needs one",["Both are longitudinal","Sound is faster than light","Light needs particles to travel"],"Light is also far faster: 300,000,000 m/s compared with about 340 m/s in air."],
+["lgt","What is a plane mirror?","A flat mirror",["A curved mirror","A mirror on an aeroplane","A prism"],"The law of reflection is easiest to see with a plane mirror."]
+];
+
+const CHECK = [
+ {t:"pla", c:"--t-hum", name:"Reproduction & health · p22–26, 31–33", items:[
+  "Identify the main male and female reproductive organs",
+  "Explain how sperm and eggs are made and how they meet",
+  "Describe how sperm and egg cells (gametes) are adapted",
+  "Fertilisation is the fusion of the nuclei; the role of cell division",
+  "The changes of puberty, and that hormones control them",
+  "What menstruation is and why it happens",
+  "What happens at each stage of the menstrual cycle",
+  "How a foetus develops",
+  "The role of the placenta",
+  "How a mother's lifestyle can affect the foetus",
+  "The main reproductive organs of plants",
+  "How flowers can be pollinated",
+  "The steps from pollen on the stigma to seed formation",
+  "The main function of fruit",
+  "How and why seeds are dispersed",
+  "Evaluate different dispersal methods",
+  "The life cycle of a flowering plant",
+  "Seeds don't need light to germinate",
+  "Evaluate self- and cross-pollination"]},
+ {c:"--t-snd", name:"Sound · p136–149", items:[
+  "The parts of a sound wave",
+  "How wavelength and amplitude change with pitch and volume",
+  "Sound is a longitudinal wave",
+  "Uses of ultrasound",
+  "Calculate the speed of sound in air and water",
+  "Compare the speed of sound in solids, liquids and gases",
+  "Why sound needs a medium to travel through"]},
+ {c:"--t-lgt", name:"Light · p136–143", items:[
+  "Light waves are transverse",
+  "Compare how light and sound travel, and their speeds",
+  "Reflection: calculate angles of incidence and reflection",
+  "Refraction",
+  "The colours of white light",
+  "Dispersion"]}
+];
+
+const GAMES = [
+ {id:"quiz", glyph:"?!", name:"Quiz Blaster", desc:"12 quick-fire questions. Three lives, streak multipliers and a speed bonus."},
+ {id:"spell", glyph:"Ab_", name:"Keyword Spell", desc:"Read the definition and type the keyword. Builds your glossary."},
+ {id:"match", glyph:"A=B", name:"Word Match", desc:"Pair keywords with their definitions against the clock. Three rounds."},
+ {id:"calc", glyph:"÷°", name:"Calc Lab", desc:"Speed of sound, echoes and reflection angles. Sound and Light only.", only:["all","snd","lgt"]},
+ {id:"cards", glyph:"[ ]", name:"Flashcards", desc:"Flip through every keyword. Cards you don't know come back round."}
+];
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const R = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pickOne = a => a[Math.floor(Math.random() * a.length)];
+const fmt = n => Number(n).toLocaleString("en-GB");
+const mmss = ms => { const s = Math.round(ms / 1000); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
+function load(k, d){ try { const v = localStorage.getItem("sciarcade." + k); return v == null ? d : JSON.parse(v); } catch(e){ return d; } }
+function save(k, v){ try { localStorage.setItem("sciarcade." + k, JSON.stringify(v)); } catch(e){} }
+const tagHTML = t => `<span class="tag" style="--c:var(${TOPICS[t].c})">${esc(TOPICS[t].name)}</span>`;
+
+let topic = load("topic", "all");
+if (!TOPICS[topic]) topic = "all";
+let soundOn = load("sound", true);
+let checks = load("checks", {});
+let bests = load("bests", {});
+const inTopic = arr => topic === "all" ? arr : arr.filter(x => x[0] === topic);
+
+/* ---------- sound ---------- */
+let ac;
+function tone(seq){
+  if (!soundOn) return;
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    let t = ac.currentTime;
+    seq.forEach(([f, d, type]) => {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = type || "square"; o.frequency.value = f;
+      g.gain.setValueAtTime(0.05, t); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+      o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + d);
+      t += d * 0.85;
+    });
+  } catch(e){}
+}
+const sfx = {
+  good: () => tone([[660,.08],[880,.08],[1320,.14]]),
+  bad: () => tone([[200,.16,"sawtooth"],[130,.24,"sawtooth"]]),
+  click: () => tone([[520,.04]]),
+  win: () => tone([[523,.1],[659,.1],[784,.1],[1047,.3]])
+};
+function renderSoundBtn(){ const b = $("#soundBtn"); b.textContent = soundOn ? "Sound on" : "Sound off"; b.setAttribute("aria-pressed", soundOn); }
+$("#soundBtn").addEventListener("click", () => { soundOn = !soundOn; save("sound", soundOn); renderSoundBtn(); sfx.click(); });
+
+/* ---------- countdown ---------- */
+(function(){
+  const now = new Date(), today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const start = new Date(2026, 10, 23), end = new Date(2026, 10, 27);
+  const days = Math.round((start - today) / 864e5);
+  const el = $("#countdown");
+  if (days > 1) el.textContent = days + " days to assessment week";
+  else if (days === 1) el.textContent = "Assessment week starts tomorrow";
+  else if (today <= end) el.textContent = "Assessment week: good luck!";
+  else el.hidden = true;
+})();
+
+/* ---------- marquee waves ---------- */
+(function(){
+  const cv = $("#waves"), ctx = cv.getContext("2d");
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let w, h, t = 0;
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const cl = css("--t-lgt"), cs = css("--t-snd");
+  function size(){ const r = cv.getBoundingClientRect(), d = devicePixelRatio || 1; w = r.width; h = r.height; cv.width = w * d; cv.height = h * d; ctx.setTransform(d,0,0,d,0,0); }
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    const x0 = Math.min(w * 0.42, w - 260), px = 6;
+    // transverse (light)
+    ctx.fillStyle = cl; ctx.globalAlpha = .55;
+    const midL = h * 0.32, A = Math.min(26, h * .12);
+    for (let x = x0; x < w; x += px){ const y = midL + A * Math.sin((x - x0) / 34 - t * 2); ctx.fillRect(Math.round(x), Math.round(y / px) * px, px - 1, px - 1); }
+    // longitudinal (sound): bars bunching into compressions
+    ctx.fillStyle = cs; ctx.globalAlpha = .5;
+    const midS = h * 0.72;
+    for (let i = 0; i < 120; i++){ const base = x0 + i * 9; if (base > w + 10) break; const x = base + 4 * Math.sin(base / 30 - t * 2.4); ctx.fillRect(Math.round(x), midS - 16, 3, 32); }
+    ctx.globalAlpha = 1;
+  }
+  function loop(){ t += 0.016; draw(); requestAnimationFrame(loop); }
+  size(); addEventListener("resize", () => { size(); draw(); });
+  if (reduce) draw(); else loop();
+})();
+
+/* ---------- menu ---------- */
+function renderChips(){
+  $("#chips").innerHTML = Object.entries(TOPICS).map(([k, v]) => {
+    const n = k === "all" ? Q.length : Q.filter(q => q[0] === k).length;
+    return `<button class="chip" style="--c:var(${v.c})" aria-pressed="${k === topic}" data-t="${k}"><i></i>${esc(v.name)} <small>${n} Qs</small></button>`;
+  }).join("");
+}
+$("#chips").addEventListener("click", e => {
+  const b = e.target.closest(".chip"); if (!b) return;
+  topic = b.dataset.t; save("topic", topic); sfx.click(); renderChips(); renderGames(); renderGloss();
+});
+function bestText(id){
+  const v = bests[id + "_" + topic];
+  if (v == null) return id === "cards" ? "Study mode" : "No best yet";
+  return id === "match" ? "Best " + mmss(v) : "Best " + fmt(v);
+}
+function renderGames(){
+  $("#games").innerHTML = GAMES.map(g => {
+    const off = g.only && !g.only.includes(topic);
+    return `<button class="cart" data-g="${g.id}" ${off ? "disabled" : ""}>
+      <span class="glyph">${esc(g.glyph)}</span><h3>${esc(g.name)}</h3><p>${esc(off ? "Pick Everything, Sound or Light to play this one." : g.desc)}</p>
+      <span class="best">${esc(off ? "" : bestText(g.id))}</span></button>`;
+  }).join("");
+}
+$("#games").addEventListener("click", e => { const b = e.target.closest(".cart"); if (b && !b.disabled) { sfx.click(); openGame(b.dataset.g); } });
+
+function renderChecklist(){
+  $("#checklist").innerHTML = CHECK.map((g, gi) => {
+    const done = g.items.filter((_, i) => checks[gi + "-" + i]).length;
+    return `<div class="group" style="--gc:var(${g.c})">
+      <div class="group-head"><h3>${esc(g.name)}</h3><span>${done}/${g.items.length}</span></div>
+      <div class="bar"><div style="width:${done / g.items.length * 100}%"></div></div>
+      ${g.items.map((it, i) => `<label class="check"><input type="checkbox" id="ck-${gi}-${i}" data-k="${gi}-${i}" ${checks[gi + "-" + i] ? "checked" : ""}><span>${esc(it)}</span></label>`).join("")}
+    </div>`;
+  }).join("");
+}
+$("#checklist").addEventListener("change", e => {
+  const k = e.target.dataset.k; if (!k) return;
+  if (e.target.checked) { checks[k] = true; sfx.good(); } else delete checks[k];
+  save("checks", checks); renderChecklist();
+  const el = document.getElementById("ck-" + k); if (el) el.focus();
+});
+
+function renderGloss(){
+  const q = $("#gsearch").value.trim().toLowerCase();
+  const list = inTopic(G).filter(g => !q || g[1].includes(q) || g[2].toLowerCase().includes(q)).sort((a, b) => a[1].localeCompare(b[1]));
+  $("#gloss").innerHTML = list.length ? list.map(g => `<div><dt><i style="--c:var(${TOPICS[g[0]].c})"></i>${esc(g[1])}</dt><dd>${esc(g[2])}</dd></div>`).join("") : `<div><dd>No keywords match “${esc(q)}”.</dd></div>`;
+}
+$("#gsearch").addEventListener("input", renderGloss);
+
+/* ---------- stage ---------- */
+let S = {}, timers = [], keyH = null;
+function clearTimers(){ timers.forEach(t => { clearInterval(t); clearTimeout(t); }); timers = []; }
+function setKeys(fn){ keyH = fn; }
+document.addEventListener("keydown", e => { if (keyH && !$("#stage").hidden) keyH(e); });
+function hud(items){ $("#hud").innerHTML = items.map(([k, v]) => `<div>${esc(k)}<b>${v}</b></div>`).join(""); }
+function openGame(id){
+  clearTimers(); setKeys(null);
+  $("#menu").hidden = true; $("#stage").hidden = false; scrollTo(0, 0);
+  ENGINES[id]();
+}
+function toMenu(){
+  clearTimers(); setKeys(null);
+  $("#stage").hidden = true; $("#menu").hidden = false;
+  renderGames(); scrollTo(0, 0);
+}
+$("#backBtn").addEventListener("click", toMenu);
+
+function endScreen({title, stats, best, lowerBetter, review, again}){
+  clearTimers(); setKeys(null);
+  let pb = false;
+  if (best) {
+    const k = best.id + "_" + topic, old = bests[k];
+    if (old == null || (lowerBetter ? best.value < old : best.value > old)) { bests[k] = best.value; save("bests", bests); pb = old != null || best.value > 0; }
+  }
+  pb ? sfx.win() : sfx.good();
+  $("#screen").innerHTML = `<div class="end">
+    <h2>${esc(title)}</h2>
+    ${pb ? `<p class="pb">New personal best!</p>` : ""}
+    <div class="stats">${stats.map(([k, v]) => `<div><span>${esc(k)}</span><b>${v}</b></div>`).join("")}</div>
+    ${review && review.length ? `<div class="review"><h3>Go over these again</h3><ul>${review.map(r => `<li>${esc(r[0])}<br><span>${esc(r[1])}</span></li>`).join("")}</ul></div>` : ""}
+    <div class="row"><button class="btn primary" id="againBtn">Play again</button><button class="btn" id="menuBtn">Back to games</button></div>
+  </div>`;
+  $("#againBtn").onclick = () => { sfx.click(); openGame(again); };
+  $("#menuBtn").onclick = toMenu;
+  $("#againBtn").focus();
+}
+
+/* ---------- Quiz Blaster ---------- */
+const QTIME = 20000;
+function quizStart(){
+  S = {pool: shuffle(inTopic(Q)).slice(0, 12), i: 0, score: 0, streak: 0, lives: 3, right: 0, missed: []};
+  quizNext();
+}
+function quizHud(){
+  const mult = Math.min(4, 1 + Math.floor(S.streak / 3));
+  hud([["Q", `${Math.min(S.i + 1, S.pool.length)}/${S.pool.length}`], ["Score", fmt(S.score)], ["Streak", S.streak + " ×" + mult], ["Lives", "♥".repeat(S.lives) + "♡".repeat(3 - S.lives)]]);
+}
+function quizNext(){
+  clearTimers();
+  if (S.i >= S.pool.length || S.lives <= 0) {
+    return endScreen({title: S.lives <= 0 ? "Game over" : "Round complete", again: "quiz",
+      stats: [["Score", fmt(S.score)], ["Correct", `${S.right}/${S.i}`], ["Lives left", S.lives]],
+      best: {id: "quiz", value: S.score}, review: S.missed});
+  }
+  const [t, q, c, w] = S.pool[S.i];
+  S.opts = shuffle([c, ...w]); S.c = c; S.answered = false; S.t0 = performance.now();
+  quizHud();
+  $("#screen").innerHTML = `${tagHTML(t)}<p class="qtext">${esc(q)}</p><div class="timer"><div id="tbar"></div></div>
+    <div class="opts">${S.opts.map((o, i) => `<button class="opt" data-i="${i}"><kbd>${i + 1}</kbd><span>${esc(o)}</span></button>`).join("")}</div><div id="fb"></div>`;
+  $("#screen").querySelectorAll(".opt").forEach(b => b.onclick = () => quizAnswer(+b.dataset.i));
+  timers.push(setInterval(() => {
+    const left = Math.max(0, QTIME - (performance.now() - S.t0));
+    const bar = $("#tbar"); if (bar) bar.style.width = (left / QTIME * 100) + "%";
+    if (left <= 0) quizAnswer(-1);
+  }, 100));
+  setKeys(e => {
+    if (!S.answered && e.key >= "1" && e.key <= "4") quizAnswer(+e.key - 1);
+    else if (S.answered && e.key === "Enter" && document.activeElement?.id !== "nextBtn") { e.preventDefault(); quizContinue(); }
+  });
+}
+function quizAnswer(i){
+  if (S.answered) return; S.answered = true; clearTimers();
+  const [, q, c, , e] = S.pool[S.i];
+  const left = Math.max(0, QTIME - (performance.now() - S.t0));
+  const ok = i >= 0 && S.opts[i] === c;
+  $("#screen").querySelectorAll(".opt").forEach((b, k) => { b.disabled = true; if (S.opts[k] === c) b.classList.add("ok"); else if (k === i) b.classList.add("no"); });
+  let head;
+  if (ok) {
+    S.streak++; S.right++;
+    const mult = Math.min(4, 1 + Math.floor((S.streak - 1) / 3));
+    const pts = (100 + Math.round(50 * left / QTIME)) * mult;
+    S.score += pts; head = `Correct! +${pts}`; sfx.good();
+  } else {
+    S.streak = 0; S.lives--; S.missed.push([q, c]);
+    head = i < 0 ? "Out of time" : "Not quite"; sfx.bad();
+  }
+  S.i++; quizHud();
+  const last = S.i >= S.pool.length || S.lives <= 0;
+  $("#fb").innerHTML = `<div class="feedback" style="--fc:var(${ok ? "--good" : "--bad"})"><strong>${esc(head)}</strong><p>${esc(e)}</p><button class="btn primary" id="nextBtn">${last ? "See results" : "Next question"} →</button></div>`;
+  $("#nextBtn").onclick = quizContinue; $("#nextBtn").focus();
+}
+function quizContinue(){ sfx.click(); quizNext(); }
+
+/* ---------- Keyword Spell ---------- */
+function norm(s){ return s.toLowerCase().replace(/ization/g, "isation").replace(/fetus/g, "foetus").replace(/[^a-z]/g, ""); }
+function sameWord(a, b){ a = norm(a); b = norm(b); return a === b || a + "s" === b || a === b + "s"; }
+function maskDef(term, def){
+  let d = def;
+  term.split(/[\s-]+/).filter(w => w.length >= 4).forEach(w => { d = d.replace(new RegExp(w.replace(/s$/, "") + "\\w*", "gi"), "•••"); });
+  return d;
+}
+function spellStart(){
+  S = {list: shuffle(inTopic(G)).slice(0, 10), i: 0, score: 0, right: 0, missed: []};
+  spellNext();
+}
+function spellHud(){ hud([["Word", `${Math.min(S.i + 1, S.list.length)}/${S.list.length}`], ["Score", fmt(S.score)], ["Correct", S.right]]); }
+function blanks(term, reveal){
+  let n = 0;
+  return [...term].map(ch => { if (/[a-z]/i.test(ch)) { n++; return n <= reveal ? ch.toUpperCase() : "_"; } return ch === " " ? "  " : ch; }).join(" ");
+}
+function spellNext(){
+  if (S.i >= S.list.length) return endScreen({title: "Spelling round complete", again: "spell",
+    stats: [["Score", fmt(S.score)], ["Correct", `${S.right}/${S.list.length}`]], best: {id: "spell", value: S.score}, review: S.missed});
+  const [t, term, def] = S.list[S.i];
+  S.tries = 0; S.hints = 0; S.done = false;
+  spellHud();
+  $("#screen").innerHTML = `${tagHTML(t)}<p class="qtext">${esc(maskDef(term, def))}</p>
+    <div class="blanks" id="blanks" aria-label="${term.replace(/[^a-z]/gi, "").length} letters">${esc(blanks(term, 0))}</div>
+    <form id="spellForm" class="row" autocomplete="off"><label for="ans" class="sub" style="position:absolute;left:-9999px">Your answer</label>
+      <input id="ans" class="answer" placeholder="Type the keyword" spellcheck="false" autocapitalize="off">
+      <button class="btn primary" type="submit">Check</button><button class="btn" type="button" id="hintBtn">Hint (−25)</button><button class="btn ghost" type="button" id="skipBtn">Skip</button></form>
+    <div id="fb"></div>`;
+  $("#ans").focus();
+  $("#spellForm").onsubmit = ev => { ev.preventDefault(); spellCheck(); };
+  $("#hintBtn").onclick = () => {
+    const len = term.replace(/[^a-z]/gi, "").length;
+    if (S.hints < len - 1) { S.hints++; $("#blanks").textContent = blanks(term, S.hints); sfx.click(); }
+    $("#ans").focus();
+  };
+  $("#skipBtn").onclick = () => spellReveal(false);
+}
+function spellCheck(){
+  if (S.done) return;
+  const [, term] = S.list[S.i], v = $("#ans").value;
+  if (!v.trim()) return;
+  if (sameWord(v, term)) {
+    const pts = Math.max(10, (S.tries ? 50 : 100) - 25 * S.hints);
+    S.score += pts; S.right++; sfx.good(); spellReveal(true, pts);
+  } else if (S.tries === 0) {
+    S.tries = 1; sfx.bad();
+    const a = $("#ans"); a.classList.remove("shake"); void a.offsetWidth; a.classList.add("shake"); a.select();
+    $("#fb").innerHTML = `<p class="hint">Not quite. One more try, or use a hint.</p>`;
+  } else { sfx.bad(); spellReveal(false); }
+}
+function spellReveal(ok, pts){
+  S.done = true;
+  const [, term, def] = S.list[S.i];
+  if (!ok) S.missed.push([def, term]);
+  $("#blanks").textContent = blanks(term, 999);
+  $("#spellForm").querySelectorAll("input,button").forEach(x => x.disabled = true);
+  S.i++; spellHud();
+  $("#fb").innerHTML = `<div class="feedback" style="--fc:var(${ok ? "--good" : "--bad"})"><strong>${ok ? "Correct! +" + pts : "The answer was: " + esc(term)}</strong><p>${esc(def)}</p><button class="btn primary" id="nextBtn">${S.i >= S.list.length ? "See results" : "Next word"} →</button></div>`;
+  $("#nextBtn").onclick = () => { sfx.click(); spellNext(); }; $("#nextBtn").focus();
+}
+
+/* ---------- Word Match ---------- */
+function matchStart(){
+  const pool = shuffle(inTopic(G));
+  S = {pool, used: 0, round: 0, rounds: 3, per: 5, mistakes: 0, t0: performance.now()};
+  timers.push(setInterval(matchHud, 250));
+  matchRound();
+}
+function matchHud(){ hud([["Round", `${Math.min(S.round + 1, S.rounds)}/${S.rounds}`], ["Time", mmss(performance.now() - S.t0)], ["Mistakes", S.mistakes]]); }
+function matchRound(){
+  const set = [], seen = new Set();
+  while (set.length < S.per) {
+    const g = S.pool[S.used++ % S.pool.length];
+    if (!seen.has(g[1])) { seen.add(g[1]); set.push(g); }
+  }
+  S.set = set; S.matched = 0; S.selT = null; S.selD = null;
+  const terms = shuffle(set.map((g, i) => i)), defs = shuffle(set.map((g, i) => i));
+  matchHud();
+  $("#screen").innerHTML = `<p class="qtext" style="font-size:1.2rem">Pick a keyword, then its definition.</p>
+    <div class="match"><div class="col">${terms.map(i => `<button class="mbtn term" data-k="t" data-i="${i}">${esc(set[i][1])}</button>`).join("")}</div>
+    <div class="col">${defs.map(i => `<button class="mbtn" data-k="d" data-i="${i}">${esc(set[i][2])}</button>`).join("")}</div></div>`;
+  $("#screen").querySelectorAll(".mbtn").forEach(b => b.onclick = () => matchClick(b));
+}
+function matchClick(b){
+  if (b.classList.contains("done")) return;
+  const k = b.dataset.k, key = k === "t" ? "selT" : "selD";
+  if (S[key]) S[key].classList.remove("sel");
+  if (S[key] === b) { S[key] = null; return; }
+  S[key] = b; b.classList.add("sel"); sfx.click();
+  if (S.selT && S.selD) {
+    const a = S.selT, d = S.selD; S.selT = S.selD = null;
+    a.classList.remove("sel"); d.classList.remove("sel");
+    if (a.dataset.i === d.dataset.i) {
+      a.classList.add("done"); d.classList.add("done"); a.disabled = d.disabled = true; sfx.good();
+      if (++S.matched === S.per) {
+        S.round++;
+        if (S.round >= S.rounds) {
+          const time = performance.now() - S.t0, total = time + S.mistakes * 5000;
+          endScreen({title: "All pairs matched", again: "match", lowerBetter: true,
+            stats: [["Time", mmss(time)], ["Mistakes", S.mistakes], ["Final (+5 s per mistake)", mmss(total)]], best: {id: "match", value: Math.round(total)}});
+        } else timers.push(setTimeout(matchRound, 500));
+      }
+    } else {
+      S.mistakes++; sfx.bad();
+      [a, d].forEach(x => { x.classList.remove("wrong"); void x.offsetWidth; x.classList.add("wrong"); });
+      matchHud();
+    }
+  }
+}
+
+/* ---------- Calc Lab ---------- */
+const MED = [["air", 340], ["water", 1500], ["steel", 5000]];
+const SPEED_HINT = "speed = distance ÷ time, so distance = speed × time and time = distance ÷ speed.";
+const ANGLE_HINT = "Angles are measured from the normal, the line at 90° to the mirror. Angle of incidence = angle of reflection.";
+const GENS = [
+ ["snd", () => { const [m, v] = pickOne(MED), t = R(2, 9), d = v * t; return {q: `Sound travels ${fmt(d)} m through ${m} in ${t} s. What is the speed of sound in ${m}?`, ans: v, unit: "m/s", hint: SPEED_HINT, work: `speed = distance ÷ time = ${fmt(d)} ÷ ${t} = ${fmt(v)} m/s`}; }],
+ ["snd", () => { const [m, v] = pickOne(MED), t = R(2, 8); return {q: `Sound travels at ${fmt(v)} m/s in ${m}. How far does it travel in ${t} s?`, ans: v * t, unit: "m", hint: SPEED_HINT, work: `distance = speed × time = ${fmt(v)} × ${t} = ${fmt(v * t)} m`}; }],
+ ["snd", () => { const [m, v] = pickOne(MED), t = R(2, 9), d = v * t; return {q: `How long does sound take to travel ${fmt(d)} m through ${m}? (Speed in ${m} = ${fmt(v)} m/s)`, ans: t, unit: "s", hint: SPEED_HINT, work: `time = distance ÷ speed = ${fmt(d)} ÷ ${fmt(v)} = ${t} s`}; }],
+ ["snd", () => { const t = R(1, 8); return {q: `A ship's sonar pulse returns as an echo after ${t} s. Sound travels at 1,500 m/s in water. How deep is the sea?`, ans: 750 * t, unit: "m", hint: "Distance = speed × time, but the sound went down and back up, so halve it.", work: `1,500 × ${t} = ${fmt(1500 * t)} m there and back, ÷ 2 = ${fmt(750 * t)} m`}; }],
+ ["snd", () => { const t = R(1, 6); return {q: `You shout at a cliff and hear the echo ${t} s later. Sound travels at 340 m/s in air. How far away is the cliff?`, ans: 170 * t, unit: "m", hint: "The sound travels to the cliff and back, so halve speed × time.", work: `340 × ${t} = ${fmt(340 * t)} m there and back, ÷ 2 = ${fmt(170 * t)} m`}; }],
+ ["snd", () => { const t = R(2, 9); return {q: `You see lightning and hear the thunder ${t} s later. Sound travels at 340 m/s. How far away was the lightning?`, ans: 340 * t, unit: "m", hint: "The light arrives almost instantly, so use the sound's travel time.", work: `distance = 340 × ${t} = ${fmt(340 * t)} m`}; }],
+ ["lgt", () => { const x = R(2, 16) * 5; return {q: `A ray of light hits a plane mirror at ${x}° to the mirror surface. What is the angle of reflection?`, ans: 90 - x, unit: "°", hint: ANGLE_HINT, work: `angle of incidence = 90 − ${x} = ${90 - x}°, and angle of reflection = angle of incidence = ${90 - x}°`}; }],
+ ["lgt", () => { const i = R(2, 16) * 5; return {q: `The angle of incidence on a plane mirror is ${i}°. What is the angle of reflection?`, ans: i, unit: "°", hint: ANGLE_HINT, work: `angle of reflection = angle of incidence = ${i}°`}; }],
+ ["lgt", () => { const i = R(2, 8) * 5; return {q: `The angle of incidence is ${i}°. What is the angle between the incident ray and the reflected ray?`, ans: 2 * i, unit: "°", hint: "Both rays make the same angle with the normal. Add them together.", work: `${i}° + ${i}° = ${2 * i}°`}; }],
+ ["lgt", () => { const y = R(2, 16) * 5; return {q: `A reflected ray leaves a mirror at ${y}° to the mirror surface. What is the angle of incidence?`, ans: 90 - y, unit: "°", hint: ANGLE_HINT, work: `angle of reflection = 90 − ${y} = ${90 - y}°, so angle of incidence = ${90 - y}°`}; }]
+];
+function calcStart(){
+  const gens = GENS.filter(g => topic === "all" || g[0] === topic);
+  const list = []; let bag = [];
+  for (let k = 0; k < 8; k++) { if (!bag.length) bag = shuffle(gens); const g = bag.pop(); list.push({t: g[0], ...g[1]()}); }
+  S = {list, i: 0, score: 0, right: 0, missed: []};
+  calcNext();
+}
+function calcHud(){ hud([["Problem", `${Math.min(S.i + 1, S.list.length)}/${S.list.length}`], ["Score", fmt(S.score)], ["Correct", S.right]]); }
+function calcNext(){
+  if (S.i >= S.list.length) return endScreen({title: "Lab session complete", again: "calc",
+    stats: [["Score", fmt(S.score)], ["Correct", `${S.right}/${S.list.length}`]], best: {id: "calc", value: S.score}, review: S.missed});
+  const p = S.list[S.i]; S.tries = 0; S.done = false;
+  calcHud();
+  $("#screen").innerHTML = `${tagHTML(p.t)}<p class="qtext">${esc(p.q)}</p>
+    <form id="calcForm" class="row" autocomplete="off"><label for="ans" style="position:absolute;left:-9999px">Your answer in ${esc(p.unit)}</label>
+      <input id="ans" class="answer" inputmode="decimal" placeholder="Answer in ${esc(p.unit)}">
+      <button class="btn primary" type="submit">Check</button><button class="btn" type="button" id="hintBtn">Show formula</button></form>
+    <div id="hintBox"></div><div id="fb"></div>`;
+  $("#ans").focus();
+  $("#hintBtn").onclick = () => { $("#hintBox").innerHTML = `<p class="hint">${esc(p.hint)}</p>`; $("#ans").focus(); };
+  $("#calcForm").onsubmit = ev => { ev.preventDefault(); calcCheck(); };
+}
+function calcCheck(){
+  if (S.done) return;
+  const p = S.list[S.i], raw = $("#ans").value.replace(/[, °]|m\/s|ms|m|s$/gi, "");
+  if (raw === "") return;
+  const x = parseFloat(raw);
+  const ok = !isNaN(x) && Math.abs(x - p.ans) <= Math.max(0.01 * p.ans, 0.5);
+  if (ok) { const pts = S.tries ? 50 : 100; S.score += pts; S.right++; sfx.good(); calcReveal(true, pts); }
+  else if (S.tries === 0) {
+    S.tries = 1; sfx.bad();
+    const a = $("#ans"); a.classList.remove("shake"); void a.offsetWidth; a.classList.add("shake"); a.select();
+    $("#fb").innerHTML = `<p class="hint">Not quite. Check your working and try once more.</p>`;
+  } else { sfx.bad(); calcReveal(false); }
+}
+function calcReveal(ok, pts){
+  S.done = true;
+  const p = S.list[S.i];
+  if (!ok) S.missed.push([p.q, p.work]);
+  $("#calcForm").querySelectorAll("input,button").forEach(x => x.disabled = true);
+  S.i++; calcHud();
+  $("#fb").innerHTML = `<div class="feedback" style="--fc:var(${ok ? "--good" : "--bad"})"><strong>${ok ? "Correct! +" + pts : "Answer: " + fmt(p.ans) + " " + esc(p.unit)}</strong><p>${esc(p.work)}</p><button class="btn primary" id="nextBtn">${S.i >= S.list.length ? "See results" : "Next problem"} →</button></div>`;
+  $("#nextBtn").onclick = () => { sfx.click(); calcNext(); }; $("#nextBtn").focus();
+}
+
+/* ---------- Flashcards ---------- */
+function cardsStart(){
+  const deck = shuffle(inTopic(G));
+  S = {deck, total: deck.length, learned: 0, again: 0, flipped: false, defFirst: load("defFirst", false)};
+  cardsRender();
+}
+function cardsRender(){
+  if (!S.deck.length) return endScreen({title: "Deck complete", again: "cards", stats: [["Cards learned", S.total], ["Times you said 'still learning'", S.again]]});
+  const [t, term, def] = S.deck[0];
+  S.flipped = false;
+  hud([["Learned", `${S.learned}/${S.total}`], ["Left", S.deck.length]]);
+  const front = S.defFirst ? `<span class="def">${esc(def)}</span>` : `<span class="big">${esc(term)}</span>`;
+  const back = S.defFirst ? `<span class="big">${esc(term)}</span>` : `<span class="def">${esc(def)}</span>`;
+  $("#screen").innerHTML = `${tagHTML(t)}
+    <div class="card-wrap"><button class="card" id="card" aria-label="Flip card"><div class="face">${front}<small>Click or press Space to flip</small></div><div class="face back">${back}<small>${esc(S.defFirst ? "Keyword" : "Definition")}</small></div></button></div>
+    <div class="row"><button class="btn" id="againBtn2">Still learning (1)</button><button class="btn primary" id="gotBtn">Got it (2)</button>
+    <button class="btn ghost" id="modeBtn">${S.defFirst ? "Show keyword first" : "Show definition first"}</button></div>`;
+  const flip = () => { S.flipped = !S.flipped; $("#card").classList.toggle("flipped", S.flipped); sfx.click(); };
+  $("#card").onclick = flip;
+  $("#againBtn2").onclick = cardsAgain;
+  $("#gotBtn").onclick = cardsGot;
+  $("#modeBtn").onclick = () => { S.defFirst = !S.defFirst; save("defFirst", S.defFirst); cardsRender(); };
+  setKeys(e => {
+    if (e.target.tagName === "INPUT") return;
+    if (e.key === " ") { e.preventDefault(); flip(); }
+    else if (e.key === "1") cardsAgain();
+    else if (e.key === "2") cardsGot();
+  });
+}
+function cardsAgain(){ const c = S.deck.shift(); S.deck.splice(Math.min(3, S.deck.length), 0, c); S.again++; sfx.bad(); cardsRender(); }
+function cardsGot(){ S.deck.shift(); S.learned++; sfx.good(); cardsRender(); }
+
+const ENGINES = {quiz: quizStart, spell: spellStart, match: matchStart, calc: calcStart, cards: cardsStart};
+
+/* ---------- boot ---------- */
+function start(){ renderSoundBtn(); renderChips(); renderGames(); renderChecklist(); renderGloss(); }
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+</script>
+</body>
+</html>
